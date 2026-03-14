@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Live-Chat</title>
+  <style>
+    body { font-family: Arial; background:#111; color:#eee; margin:0; height:100vh; display:flex; flex-direction:column; }
+    header { padding:10px; background:#222; display:flex; justify-content:space-between; }
+    main { flex:1; display:flex; }
+    #sidebar { width:220px; background:#181818; padding:10px; }
+    #chat { flex:1; display:flex; flex-direction:column; }
+    #messages { flex:1; padding:10px; overflow-y:auto; }
+    #inputRow { display:flex; padding:10px; }
+    #inputRow input { flex:1; padding:8px; }
+    #inputRow button { margin-left:8px; padding:8px; }
+  </style>
+</head>
+<body>
+<header>
+  <div>Live-Chat</div>
+  <div id="status">Nicht verbunden</div>
+</header>
+
+<main>
+  <aside id="sidebar">
+    <label>Name:<br><input id="username"></label><br><br>
+    <label>Raum:<br>
+      <select id="room">
+        <option value="allgemein">Allgemein</option>
+        <option value="freunde">Freunde</option>
+        <option value="familie">Familie</option>
+      </select>
+    </label><br><br>
+    <button id="connectBtn">Verbinden</button>
+  </aside>
+
+  <section id="chat">
+    <div id="messages"></div>
+    <div id="inputRow">
+      <input id="msgInput" placeholder="Nachricht...">
+      <button id="sendBtn">Senden</button>
+    </div>
+  </section>
+</main>
+
+<script>
+  let socket;
+  const statusEl = document.getElementById("status");
+  const usernameEl = document.getElementById("username");
+  const roomEl = document.getElementById("room");
+  const messagesEl = document.getElementById("messages");
+  const msgInput = document.getElementById("msgInput");
+
+  // HIER DEINE RENDER-URL EINTRAGEN:
+  const wsUrl = "wss://chat-server- mo0y.onrender.com/";
+
+  document.getElementById("connectBtn").onclick = () => {
+    const name = usernameEl.value.trim();
+    const room = roomEl.value;
+
+    socket = new WebSocket(wsUrl);
+
+    socket.onopen = () => {
+      statusEl.textContent = "Verbunden";
+      socket.send(JSON.stringify({ type:"system", text:`${name} betritt ${room}`, user:name, room }));
+    };
+
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      const div = document.createElement("div");
+      div.textContent = `${data.user}: ${data.text}`;
+      messagesEl.appendChild(div);
+    };
+  };
+
+  document.getElementById("sendBtn").onclick = () => {
+    const text = msgInput.value;
+    socket.send(JSON.stringify({ type:"chat", user:usernameEl.value, text }));
+    msgInput.value = "";
+  };
+</script>
+</body>
+</html>
